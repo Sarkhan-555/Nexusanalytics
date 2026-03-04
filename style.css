@@ -184,3 +184,65 @@ body{
   .logo-title{font-size:1rem;}
   .logo-sub{display:none;}
 }
+
+/* ===================== WORLD BANK EXTRAS ===================== */
+.dashboard-badge {
+  padding: 0.85rem 1.4rem;
+  display: flex; align-items: center; gap: 12px;
+}
+.badge-icon { font-size: 1.2rem; }
+.badge-label {
+  font-family: var(--font-display); font-size: 0.72rem;
+  font-weight: 700; letter-spacing: 0.15em;
+  color: var(--accent-cyan); flex: 1;
+}
+.btn-sm { padding: 0.35rem 0.9rem; font-size: 0.68rem; }
+
+.wb-val { color: var(--accent-purple); text-shadow: 0 0 20px rgba(168,85,247,0.4); }
+
+.wb-slider::-webkit-slider-thumb {
+  background: var(--accent-purple) !important;
+  box-shadow: 0 0 8px rgba(168,85,247,0.7) !important;
+}
+.wb-badge { border-color: rgba(168,85,247,0.25); }
+.wb-badge:hover { border-color: rgba(168,85,247,0.4); }
+
+.chart-wide { grid-column: span 2; }
+@media(max-width:768px){ .chart-wide { grid-column: span 1; } }
+
+.chart-sub {
+  font-family: var(--font-body); font-size: 0.68rem;
+  color: var(--accent-purple); font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+}
+
+/* Toggle Switch */
+.toggle-switch { position: relative; display: inline-block; width: 42px; height: 22px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 22px; transition: var(--transition);
+}
+.toggle-slider::before {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; border-radius: 50%;
+  left: 2px; top: 2px;
+  background: var(--text-muted);
+  transition: var(--transition);
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: rgba(168,85,247,0.25);
+  border-color: rgba(168,85,247,0.5);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+  background: var(--accent-purple);
+  box-shadow: 0 0 8px rgba(168,85,247,0.7);
+}
+
+/* WB table value colors */
+.val-high { color: #00ffaa !important; }
+.val-low  { color: #f472b6 !important; }
+.val-mid  { color: var(--text-primary) !important; }
