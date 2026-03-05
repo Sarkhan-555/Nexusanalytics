@@ -23,7 +23,7 @@ const APP = {
 
 // ===================== CONSTANTS =====================
 const MAX_ROWS = 100000;
-const SAMPLE_N = 2000;
+const SAMPLE_N = 100000;
 const DATE_FORMATS = [
   /^\d{4}-\d{2}-\d{2}/,   // YYYY-MM-DD
   /^\d{2}\/\d{2}\/\d{4}/,  // DD/MM/YYYY or MM/DD/YYYY
