@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Nexus Analytics Dashboard</title>
+  <title>Nexus Analytics</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -21,254 +21,134 @@
     <div class="logo">
       <span class="logo-icon">◈</span>
       <div>
-        <h1 class="logo-title">NEXUS<span class="accent">ANALYTICS</span></h1>
-        <p class="logo-sub" id="logo-sub-text">Intelligence Platform</p>
+        <h1 class="logo-title">NEXUS<span class="accent-c">ANALYTICS</span></h1>
+        <p class="logo-sub" id="logo-sub">Universal CSV Intelligence</p>
       </div>
     </div>
-    <div class="header-status">
-      <span class="status-dot idle"></span>
-      <span id="status-text">Awaiting Data</span>
+    <div class="header-right">
+      <div class="mode-badge" id="mode-badge" style="display:none;"></div>
+      <div class="header-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Awaiting Data</span>
+      </div>
     </div>
   </div>
 </header>
 
-<!-- UPLOAD SECTION -->
-<section class="upload-section" id="upload-section">
+<!-- UPLOAD -->
+<section id="upload-section" class="upload-section">
   <div class="upload-card glass-card">
-    <div class="upload-icon">⬡</div>
-    <h2 class="upload-title">Load Your Dataset</h2>
-    <p class="upload-desc">Supported formats: <code>class, text</code> (Reviews) or <code>World Bank WDI</code> CSV</p>
+    <div class="upload-icon">◈</div>
+    <h2 class="upload-title">Load Any CSV Dataset</h2>
+    <p class="upload-desc">Auto-detects schema — works with <em>any</em> CSV format</p>
+    <div class="upload-chips">
+      <span class="chip">Reviews</span>
+      <span class="chip">World Bank</span>
+      <span class="chip">Sales / Prices</span>
+      <span class="chip">Time Series</span>
+      <span class="chip">Any Kaggle CSV</span>
+    </div>
     <div class="upload-controls">
       <label class="file-label" for="csv-input">
-        <span class="file-label-icon">📂</span>
+        <span>📂</span>
         <span id="file-name-display">Choose CSV File</span>
         <input type="file" id="csv-input" accept=".csv"/>
       </label>
       <button class="btn-primary" id="load-btn" disabled>
-        <span class="btn-glow"></span>
-        <span>LOAD DATA</span>
+        <span class="btn-glow"></span><span>ANALYZE</span>
       </button>
     </div>
-    <div class="progress-wrap" id="progress-wrap" style="display:none;">
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="progress-fill"></div>
-      </div>
+    <div id="progress-wrap" style="display:none;">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
       <span id="progress-label">Parsing...</span>
     </div>
   </div>
 </section>
 
-<!-- ============================================================ -->
-<!--  TEXT REVIEWS DASHBOARD                                       -->
-<!-- ============================================================ -->
-<main class="dashboard" id="dashboard-text" style="display:none;">
+<!-- DASHBOARD (hidden until loaded) -->
+<main id="dashboard" style="display:none;">
 
-  <div class="dashboard-badge glass-card" style="margin-bottom:1.5rem;">
-    <span class="badge-icon">◎</span>
-    <span class="badge-label">TEXT REVIEWS MODE</span>
-    <button class="btn-secondary btn-sm" id="text-reload-btn">↺ Load New File</button>
+  <!-- reload bar -->
+  <div class="reload-bar glass-card">
+    <div id="dataset-info-text" class="dataset-info"></div>
+    <button class="btn-secondary btn-sm" id="reload-btn">↺ Load New File</button>
   </div>
 
+  <!-- KPIs -->
   <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Key Metrics</h2>
-    <div class="kpi-grid">
-      <div class="kpi-card glass-card"><div class="kpi-icon">⬡</div><div class="kpi-value" id="kpi-total-val">—</div><div class="kpi-label">Total Reviews</div></div>
-      <div class="kpi-card glass-card"><div class="kpi-icon">◈</div><div class="kpi-value" id="kpi-classes-val">—</div><div class="kpi-label">Classes</div></div>
-      <div class="kpi-card glass-card"><div class="kpi-icon">◇</div><div class="kpi-value" id="kpi-avgwords-val">—</div><div class="kpi-label">Avg Words / Review</div></div>
-      <div class="kpi-card glass-card"><div class="kpi-icon">○</div><div class="kpi-value" id="kpi-median-val">—</div><div class="kpi-label">Median Words</div></div>
-      <div class="kpi-card glass-card"><div class="kpi-icon">★</div><div class="kpi-value" id="kpi-sentiment-val">—</div><div class="kpi-label">Avg Sentiment</div></div>
-    </div>
+    <h2 class="section-title"><span class="accent-c">▸</span> Overview</h2>
+    <div id="kpi-grid" class="kpi-grid"></div>
   </section>
 
+  <!-- FILTERS -->
   <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Filters</h2>
+    <h2 class="section-title"><span class="accent-c">▸</span> Filters</h2>
     <div class="filters-card glass-card">
-      <div class="filters-grid">
-        <div class="filter-item">
-          <label class="filter-label">Class</label>
-          <select id="filter-class" class="filter-select"><option value="ALL">All Classes</option></select>
+      <div class="filter-top-row">
+        <div class="filter-item filter-search-wrap">
+          <label class="filter-label">Global Search</label>
+          <input type="text" id="global-search" class="filter-input" placeholder="Search across all columns..."/>
         </div>
-        <div class="filter-item">
-          <label class="filter-label">Keyword Search</label>
-          <input type="text" id="filter-search" class="filter-input" placeholder="Search in text..."/>
-        </div>
-        <div class="filter-item">
-          <label class="filter-label">Word Count: <span id="wc-range-label">— – —</span></label>
-          <div class="range-dual">
-            <input type="range" id="wc-min" class="range-slider" min="0" max="500" value="0"/>
-            <input type="range" id="wc-max" class="range-slider" min="0" max="500" value="500"/>
-          </div>
-        </div>
-        <div class="filter-item">
-          <label class="filter-label">Sentiment: <span id="sent-range-label">— – —</span></label>
-          <div class="range-dual">
-            <input type="range" id="sent-min" class="range-slider" min="-100" max="100" value="-100"/>
-            <input type="range" id="sent-max" class="range-slider" min="-100" max="100" value="100"/>
-          </div>
-        </div>
+        <button class="btn-secondary" id="reset-filters-btn">↺ Reset</button>
       </div>
-      <button class="btn-secondary" id="reset-filters-btn">↺ Reset Filters</button>
+      <div id="dynamic-filters" class="filters-grid"></div>
     </div>
   </section>
 
+  <!-- CHARTS -->
   <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Visualizations</h2>
-    <div class="charts-grid">
-      <div class="chart-card glass-card"><div class="chart-title">Class Distribution</div><div class="chart-wrap"><canvas id="chart-class-dist"></canvas></div></div>
-      <div class="chart-card glass-card"><div class="chart-title">Word Count Distribution</div><div class="chart-wrap"><canvas id="chart-wc-dist"></canvas></div></div>
-      <div class="chart-card glass-card"><div class="chart-title">Word Count by Class (Avg + Range)</div><div class="chart-wrap"><canvas id="chart-wc-class"></canvas></div></div>
-      <div class="chart-card glass-card"><div class="chart-title">Sentiment by Class</div><div class="chart-wrap"><canvas id="chart-sentiment-class"></canvas></div></div>
+    <h2 class="section-title"><span class="accent-c">▸</span> Visualizations</h2>
+    <div id="charts-grid" class="charts-grid"></div>
+  </section>
+
+  <!-- CORRELATION -->
+  <section class="section" id="corr-section" style="display:none;">
+    <h2 class="section-title"><span class="accent-c">▸</span> Correlation Matrix</h2>
+    <div class="glass-card" style="padding:1.5rem;overflow-x:auto;">
+      <div id="corr-matrix"></div>
     </div>
   </section>
 
+  <!-- INSIGHTS -->
   <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Top Terms</h2>
-    <div class="terms-grid">
-      <div class="terms-card glass-card"><div class="terms-header">Top 20 Words</div><div id="top-words-list" class="terms-list"></div></div>
-      <div class="terms-card glass-card"><div class="terms-header">Top 20 Bigrams</div><div id="top-bigrams-list" class="terms-list"></div></div>
-    </div>
-  </section>
-
-  <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Auto Insights</h2>
+    <h2 class="section-title"><span class="accent-c">▸</span> Auto Insights</h2>
     <div class="insights-card glass-card"><div id="insights-list" class="insights-list"></div></div>
   </section>
 
+  <!-- SPECIAL MODE PANEL (Text Reviews or World Bank) -->
+  <section class="section" id="special-panel" style="display:none;">
+    <h2 class="section-title" id="special-panel-title"><span class="accent-p">▸</span> Special Mode</h2>
+    <div id="special-panel-content"></div>
+  </section>
+
+  <!-- TABLE -->
   <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Data Preview</h2>
+    <h2 class="section-title"><span class="accent-c">▸</span> Data Preview</h2>
     <div class="table-card glass-card">
-      <div class="table-info">Showing <span id="table-count">0</span> filtered records</div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th>#</th><th>Class</th><th>Text Preview</th><th>Words</th><th>Sentiment</th></tr></thead>
-          <tbody id="table-body"></tbody>
-        </table>
+      <div class="table-toolbar">
+        <span id="table-count-label" class="table-info"></span>
+        <div id="col-toggle-wrap" class="col-toggle-wrap"></div>
       </div>
+      <div class="table-wrap"><table class="data-table" id="data-table">
+        <thead id="table-head"></thead>
+        <tbody id="table-body"></tbody>
+      </table></div>
       <div class="pagination" id="pagination"></div>
     </div>
   </section>
 
+  <!-- EXPORT -->
   <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Export</h2>
+    <h2 class="section-title"><span class="accent-c">▸</span> Export</h2>
     <div class="export-card glass-card">
-      <button class="btn-primary" id="export-csv-btn"><span class="btn-glow"></span><span>⬇ Download Filtered CSV</span></button>
-      <button class="btn-primary btn-purple" id="export-json-btn"><span class="btn-glow"></span><span>⬇ Download Summary JSON</span></button>
+      <button class="btn-primary" id="export-csv-btn"><span class="btn-glow"></span><span>⬇ Filtered CSV</span></button>
+      <button class="btn-primary btn-purple" id="export-json-btn"><span class="btn-glow"></span><span>⬇ Summary JSON</span></button>
     </div>
   </section>
 
 </main>
 
-<!-- ============================================================ -->
-<!--  WORLD BANK DASHBOARD                                         -->
-<!-- ============================================================ -->
-<main class="dashboard" id="dashboard-wb" style="display:none;">
-
-  <div class="dashboard-badge glass-card wb-badge" style="margin-bottom:1.5rem;">
-    <span class="badge-icon" style="color:var(--accent-purple)">◉</span>
-    <span class="badge-label" style="color:var(--accent-purple)">WORLD BANK WDI MODE</span>
-    <button class="btn-secondary btn-sm" id="wb-reload-btn">↺ Load New File</button>
-  </div>
-
-  <!-- WB KPIs -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Key Metrics</h2>
-    <div class="kpi-grid">
-      <div class="kpi-card glass-card"><div class="kpi-icon" style="color:var(--accent-purple)">⬡</div><div class="kpi-value wb-val" id="wb-kpi-records">—</div><div class="kpi-label">Total Records</div></div>
-      <div class="kpi-card glass-card"><div class="kpi-icon" style="color:var(--accent-purple)">◈</div><div class="kpi-value wb-val" id="wb-kpi-countries">—</div><div class="kpi-label">Countries</div></div>
-      <div class="kpi-card glass-card"><div class="kpi-icon" style="color:var(--accent-purple)">◇</div><div class="kpi-value wb-val" id="wb-kpi-indicators">—</div><div class="kpi-label">Indicators</div></div>
-      <div class="kpi-card glass-card"><div class="kpi-icon" style="color:var(--accent-purple)">○</div><div class="kpi-value wb-val" id="wb-kpi-years">—</div><div class="kpi-label">Year Range</div></div>
-      <div class="kpi-card glass-card"><div class="kpi-icon" style="color:var(--accent-purple)">◻</div><div class="kpi-value wb-val" id="wb-kpi-missing">—</div><div class="kpi-label">Missing Rate</div></div>
-    </div>
-  </section>
-
-  <!-- WB Filters -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Filters</h2>
-    <div class="filters-card glass-card">
-      <div class="filters-grid">
-        <div class="filter-item" style="grid-column: span 2;">
-          <label class="filter-label">Indicator</label>
-          <select id="wb-filter-indicator" class="filter-select"><option value="ALL">All Indicators</option></select>
-        </div>
-        <div class="filter-item">
-          <label class="filter-label">Country</label>
-          <select id="wb-filter-country" class="filter-select"><option value="ALL">All Countries</option></select>
-        </div>
-        <div class="filter-item">
-          <label class="filter-label">Year Range: <span id="wb-year-label">— – —</span></label>
-          <div class="range-dual">
-            <input type="range" id="wb-year-min" class="range-slider wb-slider" min="1960" max="2025" value="1990"/>
-            <input type="range" id="wb-year-max" class="range-slider wb-slider" min="1960" max="2025" value="2025"/>
-          </div>
-        </div>
-        <div class="filter-item" style="justify-content:flex-end;flex-direction:row;align-items:center;gap:12px;">
-          <label class="filter-label" style="white-space:nowrap;">Include all years</label>
-          <label class="toggle-switch">
-            <input type="checkbox" id="wb-all-years"/>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-      <button class="btn-secondary" id="wb-reset-btn">↺ Reset Filters</button>
-    </div>
-  </section>
-
-  <!-- WB Charts -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Visualizations</h2>
-    <div class="charts-grid">
-      <div class="chart-card glass-card chart-wide">
-        <div class="chart-title">Global Average by Year <span class="chart-sub" id="wb-chart1-sub"></span></div>
-        <div class="chart-wrap"><canvas id="wb-chart-global-trend"></canvas></div>
-      </div>
-      <div class="chart-card glass-card">
-        <div class="chart-title">Top 10 Countries <span class="chart-sub" id="wb-chart2-sub"></span></div>
-        <div class="chart-wrap"><canvas id="wb-chart-top-countries"></canvas></div>
-      </div>
-      <div class="chart-card glass-card">
-        <div class="chart-title">Country Time Series <span class="chart-sub" id="wb-chart3-sub"></span></div>
-        <div class="chart-wrap"><canvas id="wb-chart-country-ts"></canvas></div>
-      </div>
-      <div class="chart-card glass-card">
-        <div class="chart-title">Data Coverage by Year (Missing %)</div>
-        <div class="chart-wrap"><canvas id="wb-chart-missing"></canvas></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- WB Insights -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Auto Insights</h2>
-    <div class="insights-card glass-card"><div id="wb-insights-list" class="insights-list"></div></div>
-  </section>
-
-  <!-- WB Table -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Data Preview</h2>
-    <div class="table-card glass-card">
-      <div class="table-info">Showing <span id="wb-table-count">0</span> filtered records</div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th>#</th><th>Country</th><th>Indicator</th><th>Year</th><th>Value</th></tr></thead>
-          <tbody id="wb-table-body"></tbody>
-        </table>
-      </div>
-      <div class="pagination" id="wb-pagination"></div>
-    </div>
-  </section>
-
-  <!-- WB Export -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent">▸</span> Export</h2>
-    <div class="export-card glass-card">
-      <button class="btn-primary btn-purple" id="wb-export-csv-btn"><span class="btn-glow"></span><span>⬇ Download Filtered CSV</span></button>
-      <button class="btn-primary" id="wb-export-json-btn"><span class="btn-glow"></span><span>⬇ Download Summary JSON</span></button>
-    </div>
-  </section>
-
-</main>
-
-<footer class="footer"><span>NEXUS ANALYTICS &copy; 2025 — Dual-Mode Intelligence Platform</span></footer>
+<footer class="footer">NEXUS ANALYTICS &copy; 2025 — Universal CSV Intelligence</footer>
 
 <script src="script.js"></script>
 </body>
