@@ -13,12 +13,9 @@
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     FLOATING BACKGROUND LAYER — purely decorative
-     pointer-events:none so it never blocks UI
-     ═══════════════════════════════════════════ -->
+<!-- FLOATING BG -->
 <div id="bg-swim" aria-hidden="true">
-  <span class="swim-item" style="left:4%;  animation-duration:22s; animation-delay:0s;   font-size:100px;">◈</span>
+    <span class="swim-item" style="left:4%;  animation-duration:22s; animation-delay:0s;   font-size:100px;">◈</span>
   <span class="swim-item" style="left:18%; animation-duration:28s; animation-delay:4s;   font-size:38px;">◈</span>
   <span class="swim-item" style="left:35%; animation-duration:20s; animation-delay:9s;   font-size:40px;">◈</span>
   <span class="swim-item" style="left:52%; animation-duration:25s; animation-delay:2s;   font-size:70px;">◈</span>
@@ -36,7 +33,7 @@
       <span class="logo-icon">◈</span>
       <div>
         <h1 class="logo-title">NEXUS<span class="accent-c">ANALYTICS</span></h1>
-        <p class="logo-sub" id="logo-sub">Universal CSV Intelligence</p>
+        <p class="logo-sub" id="logo-sub">Universal Data Analysis Pipeline</p>
       </div>
     </div>
     <div class="header-right">
@@ -54,12 +51,13 @@
   <div class="upload-card glass-card">
     <div class="upload-icon">◈</div>
     <h2 class="upload-title">Load Any CSV Dataset</h2>
-    <p class="upload-desc">Auto-detects schema — works with <em>any</em> CSV format</p>
+    <p class="upload-desc">Full 6-stage analysis pipeline — works with <em>any</em> CSV</p>
     <div class="upload-chips">
-      <span class="chip">Reviews</span>
       <span class="chip">World Bank</span>
-      <span class="chip">Sales / Prices</span>
-      <span class="chip">Time Series</span>
+      <span class="chip">Education</span>
+      <span class="chip">Medical</span>
+      <span class="chip">Cars / Prices</span>
+      <span class="chip">FIFA Players</span>
       <span class="chip">Any Kaggle CSV</span>
     </div>
     <div class="upload-controls">
@@ -69,39 +67,136 @@
         <input type="file" id="csv-input" accept=".csv"/>
       </label>
       <button class="btn-primary" id="load-btn" disabled>
-        <span class="btn-glow"></span><span>ANALYZE</span>
+        <span class="btn-glow"></span><span>RUN ANALYSIS</span>
       </button>
     </div>
     <div id="progress-wrap" style="display:none;">
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
-      <span id="progress-label">Parsing...</span>
+      <span id="progress-label">Initializing...</span>
     </div>
   </div>
 </section>
 
-<!-- DASHBOARD (hidden until loaded) -->
+<!-- FULL ANALYSIS DASHBOARD -->
 <main id="dashboard" style="display:none;">
 
-  <!-- reload bar -->
+  <!-- Reload bar -->
   <div class="reload-bar glass-card">
     <div id="dataset-info-text" class="dataset-info"></div>
-    <button class="btn-secondary btn-sm" id="reload-btn">↺ Load New File</button>
+    <button class="btn-secondary btn-sm" id="reload-btn">↺ New File</button>
   </div>
 
-  <!-- KPIs -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent-c">▸</span> Overview</h2>
+  <!-- ── STAGE 1: Dataset Overview ── -->
+  <section class="section" id="sec-overview">
+    <h2 class="section-title"><span class="accent-c">▸</span> Stage 1 — Dataset Overview</h2>
     <div id="kpi-grid" class="kpi-grid"></div>
+    <div class="mt-1">
+      <h3 class="sub-title">Column Schema</h3>
+      <div class="table-card glass-card" style="margin-top:.6rem;">
+        <div class="table-wrap"><table class="data-table" id="schema-table">
+          <thead><tr><th>Column</th><th>Type</th><th>Unique</th><th>Sample Values</th></tr></thead>
+          <tbody id="schema-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="mt-1">
+      <h3 class="sub-title">First 5 Rows Preview</h3>
+      <div class="table-card glass-card" style="margin-top:.6rem;overflow-x:auto;">
+        <div class="table-wrap"><table class="data-table" id="preview-table">
+          <thead id="preview-head"></thead>
+          <tbody id="preview-body"></tbody>
+        </table></div>
+      </div>
+    </div>
   </section>
 
-  <!-- FILTERS -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent-c">▸</span> Filters</h2>
+  <!-- ── STAGE 2: Data Quality ── -->
+  <section class="section" id="sec-quality">
+    <h2 class="section-title"><span class="accent-c">▸</span> Stage 2 — Data Quality Assessment</h2>
+    <div id="quality-grid" class="kpi-grid" style="margin-bottom:1rem;"></div>
+    <div class="two-col-grid">
+      <div>
+        <h3 class="sub-title">Missing Values per Column</h3>
+        <div class="table-card glass-card" style="margin-top:.6rem;">
+          <div class="table-wrap"><table class="data-table" id="missing-table">
+            <thead><tr><th>Column</th><th>Missing</th><th>%</th><th>Bar</th></tr></thead>
+            <tbody id="missing-body"></tbody>
+          </table></div>
+        </div>
+      </div>
+      <div>
+        <h3 class="sub-title">Outlier Detection (IQR Method)</h3>
+        <div class="table-card glass-card" style="margin-top:.6rem;">
+          <div class="table-wrap"><table class="data-table" id="outlier-table">
+            <thead><tr><th>Column</th><th>Q1</th><th>Q3</th><th>IQR</th><th>Outliers</th></tr></thead>
+            <tbody id="outlier-body"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STAGE 3: Cleaning Summary ── -->
+  <section class="section" id="sec-cleaning">
+    <h2 class="section-title"><span class="accent-c">▸</span> Stage 3 — Data Cleaning</h2>
+    <div id="cleaning-grid" class="kpi-grid"></div>
+    <div id="cleaning-log" class="cleaning-log glass-card mt-1"></div>
+  </section>
+
+  <!-- ── STAGE 4: Descriptive Statistics ── -->
+  <section class="section" id="sec-stats">
+    <h2 class="section-title"><span class="accent-c">▸</span> Stage 4 — Descriptive Statistics</h2>
+    <div class="table-card glass-card" style="overflow-x:auto;">
+      <div class="table-wrap"><table class="data-table" id="stats-table">
+        <thead><tr><th>Column</th><th>Mean</th><th>Median</th><th>Std</th><th>Min</th><th>Max</th><th>Range</th><th>CV%</th></tr></thead>
+        <tbody id="stats-body"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ── STAGE 5: Visualizations ── -->
+  <section class="section" id="sec-charts">
+    <h2 class="section-title"><span class="accent-c">▸</span> Stage 5 — Visualizations</h2>
+    <div id="charts-grid" class="charts-grid"></div>
+    <!-- Correlation heatmap (separate wider panel) -->
+    <div id="corr-section" style="display:none;margin-top:1.1rem;">
+      <h3 class="sub-title" style="margin-bottom:.7rem;">Correlation Heatmap</h3>
+      <div class="glass-card" style="padding:1.4rem;overflow-x:auto;">
+        <div id="corr-matrix"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STAGE 6: Regression ── -->
+  <section class="section" id="sec-regression" style="display:none;">
+    <h2 class="section-title"><span class="accent-c">▸</span> Stage 6 — Regression Analysis</h2>
+    <div id="reg-kpi-grid" class="kpi-grid" style="margin-bottom:1rem;"></div>
+    <div class="two-col-grid">
+      <div>
+        <h3 class="sub-title">Model Details</h3>
+        <div class="glass-card" style="padding:1.2rem;margin-top:.6rem;" id="reg-details"></div>
+      </div>
+      <div>
+        <h3 class="sub-title">Actual vs Predicted</h3>
+        <div class="chart-card glass-card" style="margin-top:.6rem;"><div class="chart-wrap"><canvas id="reg-chart"></canvas></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Auto Insights ── -->
+  <section class="section" id="sec-insights">
+    <h2 class="section-title"><span class="accent-c">▸</span> Auto Insights</h2>
+    <div class="insights-card glass-card"><div id="insights-list" class="insights-list"></div></div>
+  </section>
+
+  <!-- ── Filters + Table ── -->
+  <section class="section" id="sec-filters">
+    <h2 class="section-title"><span class="accent-c">▸</span> Filter & Explore</h2>
     <div class="filters-card glass-card">
       <div class="filter-top-row">
         <div class="filter-item filter-search-wrap">
           <label class="filter-label">Global Search</label>
-          <input type="text" id="global-search" class="filter-input" placeholder="Search across all columns..."/>
+          <input type="text" id="global-search" class="filter-input" placeholder="Search all columns..."/>
         </div>
         <button class="btn-secondary" id="reset-filters-btn">↺ Reset</button>
       </div>
@@ -109,33 +204,6 @@
     </div>
   </section>
 
-  <!-- CHARTS -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent-c">▸</span> Visualizations</h2>
-    <div id="charts-grid" class="charts-grid"></div>
-  </section>
-
-  <!-- CORRELATION -->
-  <section class="section" id="corr-section" style="display:none;">
-    <h2 class="section-title"><span class="accent-c">▸</span> Correlation Matrix</h2>
-    <div class="glass-card" style="padding:1.5rem;overflow-x:auto;">
-      <div id="corr-matrix"></div>
-    </div>
-  </section>
-
-  <!-- INSIGHTS -->
-  <section class="section">
-    <h2 class="section-title"><span class="accent-c">▸</span> Auto Insights</h2>
-    <div class="insights-card glass-card"><div id="insights-list" class="insights-list"></div></div>
-  </section>
-
-  <!-- SPECIAL MODE PANEL (Text Reviews or World Bank) -->
-  <section class="section" id="special-panel" style="display:none;">
-    <h2 class="section-title" id="special-panel-title"><span class="accent-p">▸</span> Special Mode</h2>
-    <div id="special-panel-content"></div>
-  </section>
-
-  <!-- TABLE -->
   <section class="section">
     <h2 class="section-title"><span class="accent-c">▸</span> Data Preview</h2>
     <div class="table-card glass-card">
@@ -151,19 +219,18 @@
     </div>
   </section>
 
-  <!-- EXPORT -->
+  <!-- Export -->
   <section class="section">
     <h2 class="section-title"><span class="accent-c">▸</span> Export</h2>
     <div class="export-card glass-card">
-      <button class="btn-primary" id="export-csv-btn"><span class="btn-glow"></span><span>⬇ Filtered CSV</span></button>
-      <button class="btn-primary btn-purple" id="export-json-btn"><span class="btn-glow"></span><span>⬇ Summary JSON</span></button>
+      <button class="btn-primary" id="export-csv-btn"><span class="btn-glow"></span><span>⬇ Cleaned CSV</span></button>
+      <button class="btn-primary btn-purple" id="export-json-btn"><span class="btn-glow"></span><span>⬇ Analysis Report JSON</span></button>
     </div>
   </section>
 
 </main>
 
-<footer class="footer">NEXUS ANALYTICS &copy; 2025 — Universal CSV Intelligence</footer>
-
+<footer class="footer">NEXUS ANALYTICS &copy; 2025 — Automated Data Analysis Pipeline</footer>
 <script src="script.js"></script>
 </body>
 </html>
