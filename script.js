@@ -160,17 +160,154 @@ function destroyAll(){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// STAGE 1A — parseCSV
+// STAGE 1A — CSV / ARFF-like dirty CSV parser
+// Supports:
+// % comments, @RELATION, @ATTRIBUTE, @DATA, ?, nan, single quotes
 // ═══════════════════════════════════════════════════════════════
-function parseCSV(text){
-  return new Promise((res,rej)=>{
-    Papa.parse(text,{
-      header:true, skipEmptyLines:true,
-      dynamicTyping:false,
-      transformHeader: h=>h.trim(),
-      complete:res, error:e=>rej(e.message)
+const MISSING_TOKENS = new Set(['', '?', 'na', 'n/a', 'null', 'none', 'nan']);
+
+function normalizeCell(v){
+  if(v === null || v === undefined) return '';
+  let s = String(v).trim();
+
+  if(
+    (s.startsWith("'") && s.endsWith("'")) ||
+    (s.startsWith('"') && s.endsWith('"'))
+  ){
+    s = s.slice(1, -1).trim();
+  }
+
+  return MISSING_TOKENS.has(s.toLowerCase()) ? '' : s;
+}
+
+function normalizeRows(rows){
+  return rows
+    .filter(r => r && Object.keys(r).length)
+    .map(row => {
+      const clean = {};
+      Object.entries(row).forEach(([k, v]) => {
+        const key = String(k || '').trim();
+        if(key) clean[key] = normalizeCell(v);
+      });
+      return clean;
+    })
+    .filter(r => Object.values(r).some(v => String(v).trim() !== ''));
+}
+
+function parseAttributeName(line){
+  const match = line.match(/^@attribute\s+('.*?'|".*?"|\S+)/i);
+  if(!match) return null;
+  return normalizeCell(match[1]);
+}
+
+function looksLikeARFF(text){
+  return /(^|\n)\s*@data\b/i.test(text) && /(^|\n)\s*@attribute\b/i.test(text);
+}
+
+function parseARFFLike(text){
+  return new Promise((resolve, reject) => {
+    const lines = text.split(/\r?\n/);
+    const columns = [];
+    let dataStart = -1;
+    let relation = '';
+
+    for(let i = 0; i < lines.length; i++){
+      const line = lines[i].trim();
+
+      if(!line || line.startsWith('%')) continue;
+
+      if(line.toLowerCase().startsWith('@relation')){
+        relation = line.replace(/^@relation\s+/i, '').trim();
+      }
+
+      if(line.toLowerCase().startsWith('@attribute')){
+        const name = parseAttributeName(line);
+        if(name) columns.push(name);
+      }
+
+      if(line.toLowerCase().startsWith('@data')){
+        dataStart = i + 1;
+        break;
+      }
+    }
+
+    if(dataStart < 0 || !columns.length){
+      reject('ARFF structure detected, but @ATTRIBUTE or @DATA section is invalid.');
+      return;
+    }
+
+    const dataLines = lines
+      .slice(dataStart)
+      .filter(line => {
+        const s = line.trim();
+        return s && !s.startsWith('%');
+      });
+
+    const csvText = dataLines.join('\n');
+
+    Papa.parse(csvText, {
+      header: false,
+      skipEmptyLines: true,
+      dynamicTyping: false,
+      quoteChar: "'",
+      complete: result => {
+        if(result.errors && result.errors.length){
+          console.warn('ARFF parse warnings:', result.errors);
+        }
+
+        const data = result.data
+          .filter(row => Array.isArray(row) && row.length)
+          .map(row => {
+            const obj = {};
+            columns.forEach((col, i) => {
+              obj[col] = normalizeCell(row[i]);
+            });
+            return obj;
+          })
+          .filter(row => Object.values(row).some(v => String(v).trim() !== ''));
+
+        resolve({
+          data,
+          meta: {
+            format: 'ARFF-like CSV',
+            relation,
+            columns
+          }
+        });
+      },
+      error: e => reject(e.message)
     });
   });
+}
+
+function parseCSV(text){
+  return new Promise((resolve, reject) => {
+    Papa.parse(text, {
+      header: true,
+      skipEmptyLines: true,
+      dynamicTyping: false,
+      transformHeader: h => String(h || '').trim(),
+      complete: result => {
+        if(result.errors && result.errors.length){
+          console.warn('CSV parse warnings:', result.errors);
+        }
+
+        resolve({
+          data: normalizeRows(result.data),
+          meta: {
+            format: 'CSV',
+            relation: '',
+            columns: result.meta?.fields || []
+          }
+        });
+      },
+      error: e => reject(e.message)
+    });
+  });
+}
+
+function parseDataFile(text){
+  return looksLikeARFF(text) ? parseARFFLike(text) : parseCSV(text);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1393,14 +1530,19 @@ document.addEventListener('DOMContentLoaded',()=>{
       await tick();
       const text = await selectedFile.text();
 
-      setProgress(10,'Stage 1 › Parsing CSV...');
-      await tick();
-      const result = await parseCSV(text);
-      if(!result.data||!result.data.length) throw 'CSV file is empty or has no valid rows.';
+      setProgress(10,'Stage 1 › Parsing CSV / ARFF...');
+await tick();
 
-      APP.totalRaw  = result.data.length;
-      APP.truncated = result.data.length > APP.MAX_ROWS;
-      const rawData = APP.truncated ? result.data.slice(0,APP.MAX_ROWS) : result.data;
+const parsed = await parseDataFile(text);
+const parsedData = parsed.data;
+
+if(!parsedData || !parsedData.length){
+  throw 'File is empty or has no valid rows.';
+}
+
+APP.totalRaw  = parsedData.length;
+APP.truncated = parsedData.length > APP.MAX_ROWS;
+const rawData = APP.truncated ? parsedData.slice(0, APP.MAX_ROWS) : parsedData;
       if(APP.truncated)
         toast('warn','Large Dataset',`File has ${APP.totalRaw.toLocaleString()} rows. Analyzing first ${APP.MAX_ROWS.toLocaleString()}.`);
       APP.rawData = rawData;

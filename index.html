@@ -50,8 +50,8 @@
 <section id="upload-section" class="upload-section">
   <div class="upload-card glass-card">
     <div class="upload-icon">◈</div>
-    <h2 class="upload-title">Load Any CSV Dataset</h2>
-    <p class="upload-desc">Full 6-stage analysis pipeline — works with <em>any</em> CSV</p>
+   <h2 class="upload-title">Load CSV or ARFF Dataset</h2>
+<p class="upload-desc">Full 6-stage analysis pipeline — works with <em>CSV, ARFF-like dirty CSV</em></p>
     <div class="upload-chips">
       <span class="chip">World Bank</span>
       <span class="chip">Education</span>
@@ -64,7 +64,7 @@
       <label class="file-label" for="csv-input">
         <span>📂</span>
         <span id="file-name-display">Choose CSV File</span>
-        <input type="file" id="csv-input" accept=".csv"/>
+        <input type="file" id="csv-input" accept=".csv,.arff,.txt"/>
       </label>
       <button class="btn-primary" id="load-btn" disabled>
         <span class="btn-glow"></span><span>RUN ANALYSIS</span>
